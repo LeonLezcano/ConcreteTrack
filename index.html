@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ConcreteTrack — Despacho de Mixers, Reloj CIRSOC 201 y Lab de Probetas</title>
+  <meta name="description" content="Plataforma de Hormigón Elaborado, Ventana de Fraguado de 120m, Deslinde de Agua en Obra y Laboratorio CIRSOC 201">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚛</text></svg>">
+  <meta name="theme-color" content="#0284c7">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            concrete: {
+              50: '#f8fafc',
+              500: '#64748b',
+              800: '#1e293b',
+              900: '#0f172a',
+              950: '#020617'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Soporte táctil y prevención de rebotes */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .touch-target {
+      min-height: 48px;
+      min-width: 48px;
+    }
+    /* Clase obligatoria para impresión limpia */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100">
+
+  <!-- Header Superior -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between no-print sticky top-0 z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-amber-500 flex items-center justify-center text-xl shadow-lg shadow-sky-950">
+        🏗️
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-lg font-bold text-white tracking-tight">ConcreteTrack</h1>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 font-mono border border-sky-800" id="version-badge">v1.0.00</span>
+        </div>
+        <p class="text-xs text-slate-400">Plantas de Hormigón & Lab CIRSOC 201</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Indicador WakeLock Cabina -->
+      <button id="btn-wakelock" class="touch-target px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 flex items-center gap-1.5 hover:bg-slate-700 active:scale-95 transition" aria-label="Modo Cabina Pantalla Activa">
+        <span id="wakelock-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+        <span id="wakelock-label">Cabina</span>
+      </button>
+      <!-- Indicador Online/Offline -->
+      <div class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+        <span id="network-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="network-label" class="text-slate-400">0ms RAM</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Barra de Navegación Tabs (Mobile-First) -->
+  <nav class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-2 py-1.5 flex gap-1 overflow-x-auto no-print sticky top-[61px] z-20">
+    <button class="nav-tab touch-target flex-1 px-3 py-2 rounded-lg text-xs font-semibold text-sky-400 bg-sky-950/60 border border-sky-800 flex items-center justify-center gap-1.5 whitespace-nowrap" data-tab="dispatches" aria-label="Ver Despacho de Mixers">
+      <span>🚛</span> Mixers (120m)
+    </button>
+    <button class="nav-tab touch-target flex-1 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 border border-transparent flex items-center justify-center gap-1.5 whitespace-nowrap" data-tab="water" aria-label="Ver Deslinde de Agua en Obra">
+      <span>💧</span> Adición Agua
+    </button>
+    <button class="nav-tab touch-target flex-1 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 border border-transparent flex items-center justify-center gap-1.5 whitespace-nowrap" data-tab="lab" aria-label="Ver Laboratorio de Probetas">
+      <span>🔬</span> Lab CIRSOC
+    </button>
+    <button class="nav-tab touch-target flex-1 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 border border-transparent flex items-center justify-center gap-1.5 whitespace-nowrap" data-tab="acopios" aria-label="Ver Acopios en Metros Cúbicos">
+      <span>📦</span> Acopios m³
+    </button>
+  </nav>
+
+  <!-- Contenedor Principal de Vistas -->
+  <main class="flex-1 overflow-y-auto p-4 max-w-5xl mx-auto w-full space-y-4">
+
+    <!-- VISTA 1: DESPACHO Y MIXERS (RELOJ 120M) -->
+    <section id="view-dispatches" class="tab-view space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Despachos & Mixers en Tránsito</h2>
+          <p class="text-xs text-slate-400">Control de Ventana de Fraguado CIRSOC 201 (Límite 120 minutos)</p>
+        </div>
+        <button id="btn-new-dispatch" class="touch-target px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-sky-950 transition active:scale-95" aria-label="Crear Nuevo Despacho">
+          <span>+</span> Nuevo Despacho
+        </button>
+      </div>
+
+      <!-- Alerta Resumen de Hidratación -->
+      <div class="grid grid-cols-3 gap-2 text-center text-xs">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5">
+          <div class="text-emerald-400 font-bold text-lg" id="count-fresh">0</div>
+          <div class="text-slate-400">Óptimos (&lt;90m)</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5">
+          <div class="text-amber-400 font-bold text-lg" id="count-warning">0</div>
+          <div class="text-slate-400">Alerta (90-120m)</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5">
+          <div class="text-rose-400 font-bold text-lg" id="count-expired">0</div>
+          <div class="text-slate-400">Vencidos (&gt;120m)</div>
+        </div>
+      </div>
+
+      <!-- Lista de Mixers en Ruta -->
+      <div id="dispatches-list" class="space-y-3">
+        <!-- Renderizado dinámico vía app.js -->
+      </div>
+    </section>
+
+    <!-- VISTA 2: DESLINDE LEGAL POR ADICIÓN DE AGUA -->
+    <section id="view-water" class="tab-view hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Deslinde de Responsabilidad Estructural</h2>
+          <p class="text-xs text-slate-400">Fórmula de merma de resistencia por agua agregada en obra</p>
+        </div>
+        <button id="btn-open-waiver-modal" class="touch-target px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-950 transition active:scale-95" aria-label="Emitir Nueva Acta de Agua">
+          <span>📝</span> Emitir Acta
+        </button>
+      </div>
+
+      <!-- Tarjeta Explicativa Legal -->
+      <div class="bg-amber-950/30 border border-amber-900/60 rounded-xl p-3.5 text-xs text-amber-200 space-y-1">
+        <p class="font-bold flex items-center gap-1.5 text-amber-300">
+          <span>⚖️</span> Protección Jurídica CIRSOC 201 / IRAM 1666
+        </p>
+        <p class="text-amber-300/80 leading-relaxed">
+          Cada 10 litros de agua agregados por m³ elevan la relación agua/cemento y destruyen aproximadamente 2.0 MPa de resistencia a los 28 días. Toda adición no autorizada exige firma digital en obra y deslinde explícito.
+        </p>
+      </div>
+
+      <!-- Lista de Actas de Deslinde Emitidas -->
+      <div id="waivers-list" class="space-y-3">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- VISTA 3: LABORATORIO CIRSOC 201 (PROBETAS) -->
+    <section id="view-lab" class="tab-view hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Laboratorio de Control de Calidad CIRSOC 201</h2>
+          <p class="text-xs text-slate-400">Ensayos de Asentamiento (Cono de Abrams) y Compresión a 7/28 Días</p>
+        </div>
+        <button id="btn-open-lab-modal" class="touch-target px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950 transition active:scale-95" aria-label="Cargar Ensayo de Probeta">
+          <span>🧪</span> Cargar Ensayo
+        </button>
+      </div>
+
+      <!-- Lista de Probetas y Ensayos -->
+      <div id="cylinders-list" class="space-y-3">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+    <!-- VISTA 4: ACOPIOS EN M³ -->
+    <section id="view-acopios" class="tab-view hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-white">Cuentas Corrientes de Acopios en m³</h2>
+          <p class="text-xs text-slate-400">Gestión de saldo volumétrico, servicio de bomba y flete vacío</p>
+        </div>
+        <button id="btn-open-acopio-modal" class="touch-target px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-950 transition active:scale-95" aria-label="Nuevo Contrato de Acopio">
+          <span>+</span> Nuevo Acopio
+        </button>
+      </div>
+
+      <!-- Lista de Acopios -->
+      <div id="acopios-list" class="space-y-3">
+        <!-- Renderizado dinámico -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: NUEVO DESPACHO DE MIXER -->
+  <div id="modal-dispatch" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-dispatch-title">
+    <div class="bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-dispatch-title" class="font-bold text-base text-white">Nuevo Despacho de Motohormigonero</h3>
+        <button type="button" class="btn-close-modal touch-target text-slate-400 hover:text-white p-2 text-xl" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="form-dispatch" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">N° de Remito Oficial</label>
+          <input type="text" id="disp-remito" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" placeholder="Ej: REM-001248">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Patente Mixer</label>
+            <input type="text" id="disp-plate" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white uppercase focus:outline-none focus:border-sky-500" placeholder="Ej: AE 412 TX">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Chofer</label>
+            <input type="text" id="disp-driver" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" placeholder="Ej: Marcelo Díaz">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Cliente / Constructora</label>
+            <input type="text" id="disp-client" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" placeholder="Ej: Edisur Construcciones">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Obra / Destino</label>
+            <input type="text" id="disp-site" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500" placeholder="Ej: Torre Milénica III">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo Hormigón</label>
+            <select id="disp-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+              <option value="H-17">H-17 (17 MPa)</option>
+              <option value="H-21">H-21 (21 MPa)</option>
+              <option value="H-25" selected>H-25 (25 MPa)</option>
+              <option value="H-30">H-30 (30 MPa)</option>
+              <option value="H-35">H-35 (35 MPa)</option>
+              <option value="H-40">H-40 (40 MPa)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Volumen (m³)</label>
+            <input type="number" step="0.5" id="disp-volume" required value="8.0" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Asentamiento (cm)</label>
+            <input type="number" step="1" id="disp-slump" required value="10" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-2">
+          <input type="checkbox" id="disp-pump" class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-sky-600 focus:ring-0">
+          <label for="disp-pump" class="text-xs text-slate-300 cursor-pointer">Requiere Servicio de Bomba Pluma / Arrastre</label>
+        </div>
+        <div class="pt-3 flex gap-2">
+          <button type="button" class="btn-close-modal flex-1 touch-target py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-medium">Cancelar</button>
+          <button type="submit" class="flex-1 touch-target py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-lg shadow-sky-950 transition">Despachar Mixer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIÓN DE AGUA EN OBRA (CALCULADORA & DESLINDE) -->
+  <div id="modal-waiver" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-waiver-title">
+    <div class="bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-waiver-title" class="font-bold text-base text-white">Acta de Deslinde por Adición de Agua</h3>
+        <button type="button" class="btn-close-modal touch-target text-slate-400 hover:text-white p-2 text-xl" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="form-waiver" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Seleccionar Despacho / Remito</label>
+          <select id="waiv-dispatch-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+            <!-- Cargado dinámicamente -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Litros de Agua Solicitados en Obra</label>
+          <input type="number" id="waiv-liters" required min="10" max="300" step="5" value="60" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <!-- Previsualización Dinámica del Impacto -->
+        <div id="waiv-impact-box" class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs space-y-1.5">
+          <div class="flex justify-between text-slate-400">
+            <span>Alteración Relación a/c:</span>
+            <span class="font-bold text-amber-400" id="impact-delta-ac">+0.021</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Pérdida Estimada de Resistencia:</span>
+            <span class="font-bold text-rose-400" id="impact-loss-mpa">-1.5 MPa</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Resistencia Final Estimada a 28d:</span>
+            <span class="font-bold text-white" id="impact-final-mpa">23.5 MPa</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre Solicitante (Obra)</label>
+            <input type="text" id="waiv-req-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="Ej: Arq. Fernando Castro">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">DNI Solicitante</label>
+            <input type="text" id="waiv-req-dni" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="Ej: 29.412.890">
+          </div>
+        </div>
+
+        <!-- Panel de Firma Digital Táctil Simulado -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Firma Digital del Solicitante en Pantalla</label>
+          <div class="border-2 border-dashed border-slate-700 rounded-xl p-3 bg-slate-950 text-center text-xs text-slate-400 space-y-2">
+            <p>Dibuje o confirme la firma digital en pantalla</p>
+            <button type="button" id="btn-mock-sign" class="touch-target px-3 py-1.5 rounded-lg bg-slate-800 text-sky-400 border border-slate-700 hover:bg-slate-700 text-xs font-semibold">
+              ✍️ Estampar Firma Digital
+            </button>
+            <div id="sign-preview" class="text-emerald-400 font-mono text-xs hidden">✓ Firma biométrica táctil capturada</div>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" class="btn-close-modal flex-1 touch-target py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-medium">Cancelar</button>
+          <button type="submit" class="flex-1 touch-target py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow-lg shadow-amber-950 transition">Emitir Acta SHA-256</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CARGA DE ENSAYO DE PROBETA CIRSOC -->
+  <div id="modal-lab" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-lab-title">
+    <div class="bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-lab-title" class="font-bold text-base text-white">Ensayo de Compresión de Probetas CIRSOC</h3>
+        <button type="button" class="btn-close-modal touch-target text-slate-400 hover:text-white p-2 text-xl" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="form-lab" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Identificador Probeta</label>
+            <input type="text" id="lab-cylinder-id" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="Ej: PROB-H25-104">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo Hormigón Nominal</label>
+            <select id="lab-nominal-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="H-17">H-17 (17 MPa)</option>
+              <option value="H-21">H-21 (21 MPa)</option>
+              <option value="H-25" selected>H-25 (25 MPa)</option>
+              <option value="H-30">H-30 (30 MPa)</option>
+              <option value="H-35">H-35 (35 MPa)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Edad de Rotura</label>
+            <select id="lab-age" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="7">7 Días (Testigo Temprano ~70%)</option>
+              <option value="28" selected>28 Días (Resistencia f'c 100%)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Dimensión Molde</label>
+            <select id="lab-dim" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="STANDARD_15_30" selected>15 x 30 cm (Normalizada)</option>
+              <option value="SMALL_10_20">10 x 20 cm (Árido Fino)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Fuerza de Rotura en Prensa (kN)</label>
+          <input type="number" step="1" id="lab-force-kn" required value="480" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+          <p class="text-[11px] text-slate-400 mt-1">1 Tonelada = ~9.81 kN (ej. 480 kN $\approx$ 48.9 Toneladas)</p>
+        </div>
+        <div class="pt-2 flex gap-2">
+          <button type="button" class="btn-close-modal flex-1 touch-target py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-medium">Cancelar</button>
+          <button type="submit" class="flex-1 touch-target py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-950 transition">Certificar Ensayo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO CONTRATO DE ACOPIO -->
+  <div id="modal-acopio" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 hidden no-print" role="dialog" aria-modal="true" aria-labelledby="modal-acopio-title">
+    <div class="bg-slate-900 border border-slate-800 rounded-t-2xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-acopio-title" class="font-bold text-base text-white">Nuevo Contrato de Acopio en m³</h3>
+        <button type="button" class="btn-close-modal touch-target text-slate-400 hover:text-white p-2 text-xl" aria-label="Cerrar modal">&times;</button>
+      </div>
+      <form id="form-acopio" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Cliente / Constructora</label>
+          <input type="text" id="acop-client" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="Ej: Roggio Construcciones">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Proyecto / Obra</label>
+          <input type="text" id="acop-project" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="Ej: Viaducto Circunvalación">
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tipo Hormigón</label>
+            <select id="acop-type" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+              <option value="H-21">H-21</option>
+              <option value="H-25" selected>H-25</option>
+              <option value="H-30">H-30</option>
+              <option value="H-35">H-35</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Volumen m³</label>
+            <input type="number" step="10" id="acop-volume" required value="200" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Precio Unitario ($)</label>
+            <input type="number" step="1000" id="acop-price" required value="110000" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+          </div>
+        </div>
+        <div class="pt-2 flex gap-2">
+          <button type="button" class="btn-close-modal flex-1 touch-target py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-medium">Cancelar</button>
+          <button type="submit" class="flex-1 touch-target py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-lg shadow-purple-950 transition">Abrir Acopio</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer con Purga de Datos y Enlaces -->
+  <footer class="bg-slate-950 border-t border-slate-900 px-4 py-3 text-center text-xs text-slate-400 no-print space-y-1">
+    <div class="flex items-center justify-center gap-3">
+      <span>Estándar AiAppFactory • CIRSOC 201</span>
+      <span>•</span>
+      <button id="btn-purge-demo" class="text-rose-400 hover:text-rose-300 underline font-medium">Reset / Purgar Demo</button>
+    </div>
+    <p class="text-[11px] text-slate-400">© 2026 ConcreteTrack — Control Forense y Logístico de Hormigón Elaborado</p>
+  </footer>
+
+  <!-- Script Principal de la SPA -->
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
