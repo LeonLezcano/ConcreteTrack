@@ -1,0 +1,19 @@
+{
+  "name": "ConcreteTrack - Control de Hormigón Elaborado",
+  "short_name": "ConcreteTrack",
+  "description": "Despacho de Mixers, Ventana de Fraguado CIRSOC 201 (120m), Deslinde de Agua en Obra y Laboratorio de Probetas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#0369a1",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

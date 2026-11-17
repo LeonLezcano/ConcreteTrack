@@ -1,5 +1,5 @@
 /**
- * concreteTrackCache.service.js — Persistencia Offline-First, Outbox FIFO y Centinela Anti-Siembras
+ * concreteTrackCache.service.js - Persistencia Offline-First, Outbox FIFO y Centinela Anti-Siembras
  * AiAppFactory Standard (Engine #123)
  */
 
@@ -13,8 +13,40 @@ const STORAGE_KEYS = {
 };
 
 export class ConcreteTrackCacheService {
-  constructor(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
+  constructor(storage = typeof localStorage !== 'undefined' ? localStorage : null, onError = null) {
     this.storage = storage || new MemoryStorageFallback();
+    this.onError = typeof onError === 'function' ? onError : null;
+    this.lastError = null;
+  }
+
+  setErrorHandler(handler) {
+    this.onError = typeof handler === 'function' ? handler : null;
+  }
+
+  getLastError() {
+    return this.lastError;
+  }
+
+  clearLastError() {
+    this.lastError = null;
+  }
+
+  _reportError(message, err) {
+    const detail = err?.message ? `${message} (${err.message})` : message;
+    this.lastError = detail;
+    if (this.onError) {
+      this.onError(detail, err);
+    }
+  }
+
+  _safeSetItem(key, value) {
+    try {
+      this.storage.setItem(key, String(value));
+      return true;
+    } catch (err) {
+      this._reportError('No se pudo guardar en almacenamiento local (espacio insuficiente o bloqueado).', err);
+      return false;
+    }
   }
 
   isDemoPurged() {
@@ -22,7 +54,7 @@ export class ConcreteTrackCacheService {
   }
 
   setDemoPurged(val = true) {
-    this.storage.setItem(STORAGE_KEYS.PURGED_FLAG, val ? 'true' : 'false');
+    this._safeSetItem(STORAGE_KEYS.PURGED_FLAG, val ? 'true' : 'false');
   }
 
   /**
@@ -35,8 +67,14 @@ export class ConcreteTrackCacheService {
     const raw = this.storage.getItem(key);
     if (raw) {
       try {
-        return JSON.parse(raw);
-      } catch {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+        this._reportError(`Formato corrupto en almacenamiento local para ${key}.`);
+        return [];
+      } catch (err) {
+        this._reportError(`Error al leer datos guardados en ${key}.`, err);
         return [];
       }
     }
@@ -52,7 +90,7 @@ export class ConcreteTrackCacheService {
   }
 
   saveItems(key, items) {
-    this.storage.setItem(key, JSON.stringify(items));
+    return this._safeSetItem(key, JSON.stringify(items));
   }
 
   getDispatches(fallback = []) {
@@ -60,7 +98,7 @@ export class ConcreteTrackCacheService {
   }
 
   saveDispatches(items) {
-    this.saveItems(STORAGE_KEYS.DISPATCHES, items);
+    return this.saveItems(STORAGE_KEYS.DISPATCHES, items);
   }
 
   getWaivers(fallback = []) {
@@ -68,7 +106,7 @@ export class ConcreteTrackCacheService {
   }
 
   saveWaivers(items) {
-    this.saveItems(STORAGE_KEYS.WAIVERS, items);
+    return this.saveItems(STORAGE_KEYS.WAIVERS, items);
   }
 
   getCylinders(fallback = []) {
@@ -76,7 +114,7 @@ export class ConcreteTrackCacheService {
   }
 
   saveCylinders(items) {
-    this.saveItems(STORAGE_KEYS.CYLINDERS, items);
+    return this.saveItems(STORAGE_KEYS.CYLINDERS, items);
   }
 
   getAcopios(fallback = []) {
@@ -84,7 +122,7 @@ export class ConcreteTrackCacheService {
   }
 
   saveAcopios(items) {
-    this.saveItems(STORAGE_KEYS.ACOPIOS, items);
+    return this.saveItems(STORAGE_KEYS.ACOPIOS, items);
   }
 
   // --- Outbox FIFO para eventos sin señal ---
@@ -92,8 +130,14 @@ export class ConcreteTrackCacheService {
     const raw = this.storage.getItem(STORAGE_KEYS.OUTBOX);
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
-    } catch {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      this._reportError('Formato corrupto en la cola local de sincronización.');
+      return [];
+    } catch (err) {
+      this._reportError('Error al leer la cola local de eventos.', err);
       return [];
     }
   }
@@ -101,18 +145,18 @@ export class ConcreteTrackCacheService {
   pushOutbox(action) {
     const outbox = this.getOutbox();
     const item = {
-      id: `EVT-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 5)}`,
+      id: `EVT-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
       timestamp: new Date().toISOString(),
       action
     };
     outbox.push(item);
-    this.storage.setItem(STORAGE_KEYS.OUTBOX, JSON.stringify(outbox));
+    this._safeSetItem(STORAGE_KEYS.OUTBOX, JSON.stringify(outbox));
     return item;
   }
 
   flushOutbox() {
     const outbox = this.getOutbox();
-    this.storage.setItem(STORAGE_KEYS.OUTBOX, JSON.stringify([]));
+    this._safeSetItem(STORAGE_KEYS.OUTBOX, JSON.stringify([]));
     return outbox;
   }
 
@@ -123,6 +167,7 @@ export class ConcreteTrackCacheService {
     this.storage.removeItem(STORAGE_KEYS.ACOPIOS);
     this.storage.removeItem(STORAGE_KEYS.OUTBOX);
     this.setDemoPurged(true);
+    this.clearLastError();
   }
 }
 

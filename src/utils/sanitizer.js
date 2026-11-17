@@ -68,7 +68,7 @@ export class Sanitizer {
       'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
       'STRONG', 'B', 'EM', 'I', 'U', 'SMALL', 'BADGE', 'BUTTON', 'A', 'IMG',
       'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'MAIN',
-      'LABEL', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'FORM',
+      'LABEL', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'FORM', 'PROGRESS',
       'SVG', 'PATH', 'CIRCLE', 'RECT', 'LINE', 'POLYLINE', 'POLYGON', 'G'
     ]);
 
@@ -77,9 +77,13 @@ export class Sanitizer {
       'data-action', 'data-tab', 'data-qr', 'data-code', 'data-type', 'data-vol',
       'data-client', 'data-site', 'data-plate', 'data-driver', 'data-remito',
       'disabled', 'checked', 'selected', 'rows', 'cols', 'href', 'title', 'aria-label',
-      'role', 'd', 'fill', 'stroke', 'stroke-width', 'viewBox', 'xmlns', 'src', 'alt',
+      'aria-hidden', 'role', 'd', 'fill', 'stroke', 'stroke-width', 'stroke-linecap',
+      'stroke-linejoin', 'viewbox', 'xmlns', 'src', 'alt', 'x1', 'y1', 'x2', 'y2',
+      'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'points', 'rx', 'ry',
       'target', 'rel', 'step', 'max', 'min', 'style'
     ]);
+
+    const svgTags = new Set(['SVG', 'PATH', 'CIRCLE', 'RECT', 'LINE', 'POLYLINE', 'POLYGON', 'G']);
 
     function cleanNode(node) {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -95,7 +99,10 @@ export class Sanitizer {
         return null;
       }
 
-      const cleanEl = document.createElement(tagName.toLowerCase());
+      const isSvg = svgTags.has(tagName);
+      const cleanEl = isSvg && typeof document.createElementNS === 'function'
+        ? document.createElementNS('http://www.w3.org/2000/svg', tagName.toLowerCase())
+        : document.createElement(tagName.toLowerCase());
 
       for (let i = 0; i < node.attributes.length; i++) {
         const attr = node.attributes[i];
@@ -105,7 +112,8 @@ export class Sanitizer {
         if ((attrName === 'href' || attrName === 'src') && attr.value.trim().toLowerCase().startsWith('javascript:')) continue;
 
         if (allowedAttrs.has(attrName) || attrName.startsWith('data-')) {
-          cleanEl.setAttribute(attrName, attr.value);
+          const finalName = attrName === 'viewbox' ? 'viewBox' : attrName;
+          cleanEl.setAttribute(finalName, attr.value);
         }
       }
 

@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background-color: #0369a1;
+    color: #f8fafc;
+  }
+
+  :focus-visible {
+    outline: 2px solid #38bdf8;
+    outline-offset: 2px;
+  }
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-target-cab {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.ct-progress {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #020617;
+  border: 1px solid #1e293b;
+}
+
+.ct-progress::-webkit-progress-bar {
+  background-color: #020617;
+  border-radius: 6px;
+}
+
+.ct-progress::-webkit-progress-value {
+  background-color: #0284c7;
+  border-radius: 6px;
+}
+
+.ct-progress::-moz-progress-bar {
+  background-color: #0284c7;
+  border-radius: 6px;
+}
+
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.ct-dot-online {
+  background-color: #10b981;
+}
+
+.ct-dot-queued {
+  background-color: #f59e0b;
+}
+
+.ct-dot-offline {
+  background-color: #f43f5e;
+}
+
+.ct-dot-idle {
+  background-color: #94a3b8;
+}
+
+.ct-callout-warn {
+  background-color: rgba(69, 26, 3, 0.4);
+  border-color: #92400e;
+  color: #fef3c7;
+}
+
+.ct-badge-warn {
+  background-color: #451a03;
+  border-color: #b45309;
+  color: #fcd34d;
+}
+
+.ct-badge-ok {
+  background-color: #022c22;
+  border-color: #047857;
+  color: #6ee7b7;
+}
+
+.ct-badge-danger {
+  background-color: #4c0519;
+  border-color: #be123c;
+  color: #fda4af;
+}
+
+.ct-badge-info {
+  background-color: #082f49;
+  border-color: #0369a1;
+  color: #7dd3fc;
+}
+
+.ct-alert-danger {
+  background-color: #4c0519;
+  border-color: #be123c;
+  color: #ffe4e6;
+}
+
+.ct-btn-danger-soft {
+  background-color: #881337;
+  border-color: #be123c;
+  color: #ffffff;
+}
+
+.ct-btn-danger-soft:hover {
+  background-color: #9f1239;
+}
+
+.ct-btn-primary {
+  background-color: #0369a1;
+  color: #ffffff;
+}
+
+.ct-btn-primary:hover {
+  background-color: #075985;
+}
+
+.ct-btn-danger {
+  background-color: #be123c;
+  color: #ffffff;
+}
+
+.ct-btn-danger:hover {
+  background-color: #9f1239;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

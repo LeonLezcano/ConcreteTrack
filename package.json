@@ -1,6 +1,6 @@
 {
   "name": "concretetrack",
-  "version": "1.0.00",
+  "version": "1.0.01",
   "description": "Plantas de Hormigón Elaborado, Despacho de Mixers, Reloj Fraguado CIRSOC 201 y Laboratorio de Probetas",
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "test:security": "node ../AiAppFactory/tools/security-guardian/index.mjs .",
     "security:full": "node ../AiAppFactory/tools/security-guardian/index.mjs .",
     "compliance:audit": "node ../AiAppFactory/tools/compliance-guardian/index.mjs audit .",
-    "version:bump": "node -e \"const fs = require('fs'); const v = JSON.parse(fs.readFileSync('version.json')); const parts = v.version.slice(1).split('.'); parts[2] = String(Number(parts[2]) + 1).padStart(2, '0'); v.version = 'v' + parts.join('.'); fs.writeFileSync('version.json', JSON.stringify(v, null, 2)); console.log(v.version);\""
+    "version:bump": "node -e \"const fs = require('fs'); const v = JSON.parse(fs.readFileSync('version.json', 'utf8')); const parts = v.version.slice(1).split('.'); parts[2] = String(Number(parts[2]) + 1).padStart(2, '0'); const nextSemver = parts.join('.'); v.version = 'v' + nextSemver; v.cacheName = 'concretetrack-cache-' + v.version; fs.writeFileSync('version.json', JSON.stringify(v, null, 2) + '\\n'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.version = nextSemver; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\\n'); let sw = fs.readFileSync('sw.js', 'utf8'); sw = sw.replace(/concretetrack-cache-v\\d+\\.\\d+\\.\\d{2}/, v.cacheName); fs.writeFileSync('sw.js', sw); console.log(v.version);\""
   },
   "keywords": [
     "hormigon-elaborado",

@@ -62,7 +62,7 @@ ConcreteTrack incorpora 4 motores especializados alineados con el Catálogo Ofic
 
 ---
 
-## 🧪 Arnés de Pruebas Multi-Capa (54 Tests)
+## 🧪 Arnés de Pruebas Multi-Capa (55 Tests)
 
 Batería completa automatizada en 5 capas:
 
@@ -73,20 +73,24 @@ pnpm test
 | Capa | Nombre | Cantidad | Descripción |
 | :--- | :--- | :---: | :--- |
 | **Capa 1** | Unitarias & Fuzzing Caótico | 26 | Matemáticas de hidratación CIRSOC, sobrestadía, revoluciones mixer, relación a/c, rotura en prensa 15x30 y 10x20, y tolerancia cono Abrams. |
-| **Capa 2** | Integración & Persistencia Offline | 10 | Descuento en acopio, Outbox FIFO para eventos sin señal, centinela anti-siembras fantasma tras purga (`concretetrack_demo_purged`). |
+| **Capa 2** | Integración & Persistencia Offline | 11 | Descuento en acopio, Outbox FIFO local, reporte explícito de errores de cuota/JSON corrupto y centinela anti-siembras fantasma tras purga (`concretetrack_demo_purged`). |
 | **Capa 3** | Componentes & Neutralización DOM | 6 | Sinks de Sanitizer, escape de etiquetas, filtrado de esquemas maliciosos (`javascript:`, `data:`), formateadores de $m^3$, MPa y ARS. |
-| **Capa 4** | Seguridad Cualitativa & Reglas | 6 | Validación estricta de cabeceras en `firebase.json`, reglas de Firestore, escaneo de secretos y versión semántica `vX.Y.ZZ`. |
+| **Capa 4** | Seguridad Cualitativa & Reglas | 6 | Validación estricta de cabeceras en `firebase.json`, reglas de Firestore, escaneo de secretos, CSS compilado local, `manifest.json` y versión semántica `vX.Y.ZZ`. |
 | **Capa 5** | Flujo E2E Ciclo de Vida | 6 | Ciclo completo: Contrato de Acopio $\to$ Despacho Mixer $\to$ Tránsito $\to$ Acta de Agua $\to$ Cono Abrams $\to$ Rotura a 28 días con sello SHA-256. |
 
-**Total:** 54 tests | 54 aprobados (100% PASS).
+**Total:** 55 tests | 55 aprobados (100% PASS).
 
 ---
 
-## 📱 Operatividad Callejera y Modo Cabina
+## 📱 Operatividad Callejera, Accesibilidad y Offline-First
 
-- **Mobile-First Touch Target:** Botones y selectores optimizados con altura mínima $\ge 44\text{px}$ para manejo ágil en pantalla de smartphone o tablet en obra.
-- **Screen Wake Lock API:** Modo Cabina integrado (`navigator.wakeLock.request('screen')`) que mantiene la pantalla encendida en el soporte de parabrisas del camión mixer.
-- **Auto Re-enganche:** Escucha `visibilitychange` para recuperar el bloqueo de pantalla automáticamente al regresar desde Google Maps o Waze.
+- **Mobile-First Touch Target:** Botones, selectores y acciones de cabina con áreas táctiles $\ge 44\text{px}$ ($\ge 48\text{px}$ en controles de cabina y envío de formularios), grids responsivos colapsables (`grid-cols-1 sm:grid-cols-...`) y zoom habilitado.
+- **Screen Wake Lock API:** Modo Cabina integrado (`navigator.wakeLock.request('screen')`) con re-enganche al volver desde mapas.
+- **Firma Táctil en Canvas:** Captura real de firma en `<canvas>` HTML5 (`pointerdown`/`pointermove`/`pointerup`) con exportación PNG en cliente antes de sellar el acta SHA-256.
+- **Accesibilidad Teclado & Lector de Pantalla:** Navegación por pestañas con `role="tablist"`/`role="tab"`/`aria-selected`, anillos `:focus-visible`, etiquetas `<label for="...">` vinculadas, modales con cierre por `Escape`/clic externo y trampa de foco, y confirmación accesible sin `window.alert`/`window.confirm`.
+- **PWA y CSS Local (CSP Estricta):** Tailwind CSS precompilado localmente (`styles.css`), `manifest.json` y `sw.js` con estrategia *Network-First* para HTML/`version.json` y *Cache-First* para assets estáticos, sin dependencias externas en runtime ni `'unsafe-inline'`.
+- **Transparencia de Estado Local:** Los datos semilla iniciales se identifican con `[DEMO]` hasta su purga, el indicador de red refleja `navigator.onLine` y la cola local FIFO (`outbox`), y las fallas de almacenamiento local se informan en pantalla.
+- **Sistema de Diseño:** Documentado en [DESIGN.md](./DESIGN.md).
 
 ---
 

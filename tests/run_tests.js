@@ -526,15 +526,20 @@ async function runAllTests() {
   // ----------------------------------------------------
   console.log('\n--- CAPA 4: Seguridad Cualitativa & Auditoría de Reglas ---');
 
-  await test('L4-01: firebase.json - CSP Cualitativa sin unsafe-eval, sin * y sin http://', () => {
+  await test('L4-01: firebase.json - CSP Cualitativa sin unsafe-eval, sin unsafe-inline en script-src, sin * y sin http://', () => {
     const firebaseJson = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'firebase.json'), 'utf8'));
     const allHeaders = firebaseJson.hosting.headers.flatMap(h => h.headers);
     const csp = allHeaders.find(h => h.key === 'Content-Security-Policy');
     assert(csp, 'Content-Security-Policy debe existir');
     const val = csp.value;
     assert(!val.includes("'unsafe-eval'"), 'Prohibido unsafe-eval');
+    assert(!val.includes("'unsafe-inline'"), 'Prohibido unsafe-inline');
+    assert(!val.includes('cdn.tailwindcss.com'), 'Prohibido cdn.tailwindcss.com en CSP');
     assert(!val.includes('script-src *'), 'Prohibido comodín en script-src');
     assert(!val.includes('http://'), 'Prohibido orígenes http://');
+    const swHeaderBlock = firebaseJson.hosting.headers.find(h => h.source === '/sw.js' || h.source === 'sw.js');
+    assert(swHeaderBlock, 'Debe existir regla Cache-Control para /sw.js');
+    assertEqual(swHeaderBlock.source, '/sw.js');
   });
 
   await test('L4-02: firebase.json - Cabeceras de seguridad requeridas presentes (DENY, nosniff, HSTS)', () => {
@@ -575,13 +580,33 @@ async function runAllTests() {
     assert(pkg.scripts.test, 'Debe incluir test');
     assert(pkg.scripts['test:security'] || pkg.scripts['security:full'], 'Debe incluir test:security');
     assert(pkg.scripts['version:bump'], 'Debe incluir version:bump');
-    assertEqual(pkg.version, '1.0.00');
+    assert(/^\d+\.\d+\.\d{2}$/.test(pkg.version), `Versión semántica inválida en package.json: ${pkg.version}`);
   });
 
-  await test('L4-06: version.json - Alineación con estándar semántico vX.Y.ZZ', () => {
+  await test('L4-06: version.json - Alineación con estándar semántico vX.Y.ZZ, sw.js y PWA offline', () => {
     const ver = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'version.json'), 'utf8'));
-    assertEqual(ver.version, 'v1.0.00');
+    assert(/^v\d+\.\d+\.\d{2}$/.test(ver.version), `Versión semántica inválida: ${ver.version}`);
     assert(ver.appName === 'ConcreteTrack');
+    const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf8');
+    assert(swContent.includes(`concretetrack-cache-${ver.version}`), 'sw.js CACHE_NAME debe coincidir con version.json');
+    assert(fs.existsSync(path.join(ROOT_DIR, 'styles.css')), 'Debe existir styles.css compilado localmente');
+    assert(fs.existsSync(path.join(ROOT_DIR, 'manifest.json')), 'Debe existir manifest.json');
+  });
+
+  await test('L2-11: CacheService - Reporta errores de JSON corrupto y QuotaExceeded sin fallar', () => {
+    const reported = [];
+    const corruptStorage = {
+      getItem: () => '{json-invalido',
+      setItem: () => { throw new Error('QuotaExceededError'); },
+      removeItem: () => {}
+    };
+    const cache = new ConcreteTrackCacheService(corruptStorage, (msg) => reported.push(msg));
+    const items = cache.getDispatches();
+    assertEqual(items.length, 0);
+    assert(cache.getLastError() !== null, 'Debe registrar lastError en JSON corrupto');
+    const saved = cache.saveDispatches([{ id: 'X' }]);
+    assertEqual(saved, false);
+    assert(reported.length >= 2, 'Debe invocar onError para JSON corrupto y QuotaExceededError');
   });
 
   // ----------------------------------------------------
